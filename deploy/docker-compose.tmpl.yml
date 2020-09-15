@@ -1,0 +1,25 @@
+version: '3.7'
+
+services:
+  arcgis-prometheus:
+    image: ${IMAGE_NAME}:${IMAGE_TAG:-latest}
+    environment:
+      USERNAME:
+      PASSWORD:
+      SERVER_URL:
+      PORT:
+    networks:
+      monitoring-net:
+    deploy:
+      mode: replicated
+      replicas: ${REPLICAS:-1}
+      restart_policy:
+        delay: ${RESTART_DELAY:-3s}
+      update_config:
+        delay: ${UPDATE_DELAY:-1m}
+
+networks:
+  monitoring-net:
+    name: ${MONITORING_NET_NAME:-monitoring-net}
+    driver: ${MONITORING_NET_DRIVER:-overlay}
+    attachable: ${MONITORING_NET_ATTACHABLE:-true}
