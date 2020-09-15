@@ -33,8 +33,9 @@ def add_metric(service, metric):
     service_name = statistics['summary']['serviceName']
     service_type = statistics['summary']['type']
     service_state = get_service_state(service.status['realTimeState'])
+    service_configured_state = service.status['configuredState'].lower()
 
-    metric.add_metric([folder, service_name, service_type], service_state)
+    metric.add_metric([folder, service_name, service_type, service_configured_state], service_state)
 
 
 class CustomCollector(object):
@@ -43,7 +44,7 @@ class CustomCollector(object):
 
     def collect(self):
         metrics = StateSetMetricFamily("arcgis_service_state", 'Status REST services of ArcGIS',
-                                       labels=['folder', 'service_name', 'type', 'state'])
+                                       labels=['folder', 'service_name', 'type', 'configured_state', 'state'])
         for folder in self.gis_server.services.folders:
             services = self.gis_server.services.list(folder=folder)
             num_services = len(services)
