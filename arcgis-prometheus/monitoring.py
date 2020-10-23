@@ -1,20 +1,30 @@
 import concurrent.futures
 import logging
-import time
+from healthcheck import HealthCheck
 from os import environ
 
-from arcgis.gis.server.admin import Server
-from prometheus_client import start_http_server
+from flask import Flask
+from werkzeug.middleware.dispatcher import DispatcherMiddleware
+from prometheus_client import make_wsgi_app
+import requests
+
+from arcgis.gis.server.admin import Server as ServerArcGIS
 from prometheus_client.core import REGISTRY, StateSetMetricFamily, CounterMetricFamily, GaugeMetricFamily
 
 STATES = ['started', 'stopped']
 
 
-def check_connection(gis_server):
-    try:
-        gis_server.system
-    except AttributeError as e:
-        raise Exception('Connection error')
+class Server(ServerArcGIS):
+    def __init__(self, *args, **kwargs):
+        ServerArcGIS.__init__(self, *args, **kwargs)
+
+    def check_connection(self):
+        try:
+            if self._con and self._con.token:
+                requests.get(f"{self.url}/info",
+                             headers={'Authorization': self._con.token})
+        except requests.exceptions.RequestException as e:
+            raise Exception('Connection error')
 
 
 def connect(username, password, server_base_url):
@@ -23,8 +33,7 @@ def connect(username, password, server_base_url):
                         token_url=f"{server_base_url}/tokens/generateToken",
                         username=username,
                         password=password, initialize=True)
-    check_connection(gis_server)
-
+    gis_server.check_connection()
     logging.info("Connected")
     return gis_server
 
@@ -60,7 +69,8 @@ class CustomCollector(object):
 
     def collect(self):
         state_metrics = StateSetMetricFamily("arcgis_service_state", 'Status REST services of ArcGIS',
-                                             labels=['folder', 'service_name', 'type', 'configured_state', 'state'])
+                                             labels=['folder', 'service_name', 'type', 'configured_state', 'cluster',
+                                                     'state'])
         busy_metrics = CounterMetricFamily("arcgis_service_busy_time", 'Time busy time in seconds',
                                            labels=['folder', 'service_name', 'type', 'machine'], unit='seconds')
         transactions_metrics = CounterMetricFamily("arcgis_service_trasactions", 'Number transactions',
@@ -94,7 +104,7 @@ class CustomCollector(object):
                 extns = [extns]
             for extn in extns:
                 extn_name = extn['name']
-                extn_display_name = extn['displayName'] if 'displayName' in extn else ''
+                extn_display_name = extn['displayName'] if 'displayName' in extn else extn_name
                 extn_version = extn['version']
                 extn_can_expire = str(extn['canExpire'])
                 extn_expirartion = extn['expiration'] / 1000
@@ -103,20 +113,29 @@ class CustomCollector(object):
         return metric
 
 
-#      "folderName": "Maps",
-#      "serviceName": "Seattle",
-#      "type": "MapServer",
-#      "machineName": "MACHINE1.DOMAIN.COM",
-
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
-    port = environ.get('PORT', 8000)
-    start_http_server(port)
 
     username = environ.get('USERNAME', 'admin')
     password = environ.get('PASSWORD', 'changeme')
     server_base_url = environ.get('SERVER_URL', 'https://arcgisonline.com')
     gis_server = connect(username, password, server_base_url)
+
+    def arcgis_enterprise_available():
+        status = True
+        try:
+            gis_server.check_connection()
+        except Exception as e:
+            status = False
+        return status, "UP" if status else "DOWN"
+
+    app = Flask(__name__)
+    health = HealthCheck(app, "/healthcheck")
+    health.add_check(arcgis_enterprise_available)
+
+    app.wsgi_app = DispatcherMiddleware(app.wsgi_app, {
+        '/metrics': make_wsgi_app(REGISTRY),
+    })
     REGISTRY.register(CustomCollector(gis_server))
-    while True:
-        time.sleep(1)
+
+    app.run()

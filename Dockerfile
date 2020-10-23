@@ -6,7 +6,11 @@ RUN pip install --no-cache-dir six \
 				requests_ntlm \
 				ntlm_auth \
 				prometheus-client && \
-	pip install --no-cache-dir arcgis --no-deps
+	pip install --no-cache-dir arcgis --no-deps && \
+	apt-get update && \
+	apt-get install -y \
+                wget && \
+    rm -rf /var/lib/apt/lists/*
 
 COPY arcgis-prometheus /app
 
