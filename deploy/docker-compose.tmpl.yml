@@ -10,12 +10,12 @@ services:
       PORT:
     networks:
       monitoring-net:
-  healthcheck:
-    test: wget --spider -q http://localhost:${PORT}/healthcheck
-    interval: ${HEALTHCHECK_INTERVAL:-1m}
-    timeout: ${HEALTHCHECK_TIMEOUT:-30s}
-    retries: ${HEALTHCHECK_RETRIES:-10}
-    start_period: ${HEALTHCHECK_START_PERIOD:-3m}
+    healthcheck:
+      test: wget --spider -q http://localhost:${PORT}/healthcheck
+      interval: ${HEALTHCHECK_INTERVAL:-1m}
+      timeout: ${HEALTHCHECK_TIMEOUT:-30s}
+      retries: ${HEALTHCHECK_RETRIES:-10}
+      start_period: ${HEALTHCHECK_START_PERIOD:-3m}
     deploy:
       mode: replicated
       replicas: ${REPLICAS:-1}
