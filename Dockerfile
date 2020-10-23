@@ -5,6 +5,8 @@ RUN pip install --no-cache-dir six==1.15.* \
 				requests_toolbelt==0.9.* \
 				requests_ntlm==1.1.* \
 				ntlm_auth==1.5.* \
+				healthcheck==1.3.* \
+				flask==1.1.* \
 				prometheus-client==0.8.* && \
 	pip install --no-cache-dir arcgis==1.8.* --no-deps && \
 	apt-get update && \
