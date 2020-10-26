@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="arcgis-prometheus-prometheus",
+    name="src-prometheus",
     version="0.0.1",
     author="Ignacio Lorenzo García",
     author_email="ilorgar@gesplan.es",
