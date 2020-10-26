@@ -5,20 +5,19 @@ ENV PORT=5000 \
 
 RUN apt-get update && \
 	apt-get install -y --no-install-recommends \
-	            gcc \
+	            gcc=4:* \
                 wget=1.* \
-                libc6-dev \
-                libpcre3 \
-                libpcre3-dev && \
+                libc6-dev=2.* \
+                libpcre3=2:* \
+                libpcre3-dev=2:* && \
     pip install --no-cache-dir six==1.15.* \
 				requests==2.24.* \
 				requests_toolbelt==0.9.* \
 				requests_ntlm==1.1.* \
 				ntlm_auth==1.5.* \
-				healthcheck==1.3.* \
 				flask==1.1.* \
 				prometheus-client==0.8.* \
-				uwsgi && \
+				uwsgi==2.* && \
 	pip install --no-cache-dir arcgis==1.8.* --no-deps && \
 	apt-get remove -y \
                 gcc \
