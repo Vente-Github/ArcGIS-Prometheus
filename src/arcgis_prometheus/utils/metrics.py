@@ -75,7 +75,7 @@ class CustomCollector(object):
                 extn_display_name = extn['displayName'] if 'displayName' in extn else extn_name
                 extn_version = extn['version']
                 extn_can_expire = str(extn['canExpire'])
-                extn_expirartion = extn['expiration'] / 1000
+                extn_expirartion = extn['expiration'] / 1000 if extn['canExpire'] else 0
                 metric.add_metric([extn_type, extn_name, extn_display_name, extn_version, extn_can_expire],
                                   extn_expirartion)
         return metric
